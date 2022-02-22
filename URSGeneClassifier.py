@@ -125,12 +125,13 @@ def load_and_format_training_data(train):
 	return X_train, X_test, y_train, y_test, X_full, y_full
 
 # EVALUATION: Evaluate model and show results
-def evaluate_model(model, X_full, y_full, X_test, y_test):
+def evaluate_model(model, X_full, y_full, X_test, y_test, scores):
 	cv_scores = cross_val_score(model, X_full, y_full, cv=5)
 	print("\n5 fold cross validation scores:")
 	print(cv_scores)
 	print("\n5 fold cross validation score average:")
 	print(sum(cv_scores)/len(cv_scores))
+	scores[type(model).__name__] = sum(cv_scores)/len(cv_scores)
 
 	print("\nAUROC score:")
 	print(roc_auc_score(y_test, model.predict(X_test)))
