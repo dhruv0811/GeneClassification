@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import scipy.sparse as sps
 
 # 1: Re-ID all the genes in the dataset and save conversions in a dictionary
-def re_id_genes_to_dict(source, restruc):
+def re_id_genes_to_dict(source, restruc, output):
 	dict = {}
 	counter = 0
 	with open(source) as inp, open(restruc,"w") as wr:
@@ -27,7 +27,7 @@ def re_id_genes_to_dict(source, restruc):
 			wr.write(strOutput.strip() + "\n")
 			#print(str(os.path.getsize('brain_top_restruc.txt')/8500000) + " %")
 
-	with open('saved_dictionary.pkl', 'wb') as f:
+	with open(output, 'wb') as f:
 		pickle.dump(dict, f)
 	
 	return dict
@@ -53,11 +53,12 @@ def create_sparse_matrix(dictf, restruc):
 	return matrix, dim
 
 # 3: Create positive class by searching for relevant genes in matrix
-def create_positive_class(posclass, matrix):
+def create_positive_class(posclass, matrix, dictf, output):
+	dict = dictf
 	#posclass should be something like 'alz_id_final.txt'
 	num_pos = sum(1 for line in open(posclass))
 	set_pos = set()
-	positiveClass = sps.lil_matrix((num_pos,dim))
+	positiveClass = sps.lil_matrix((num_pos,matrix.shape[0]))
 	with open(posclass, "r") as alz:
 		count = 0
 		for line in alz:
@@ -70,19 +71,21 @@ def create_positive_class(posclass, matrix):
 	positiveClass.resize(len(set_pos), positiveClass.shape[1])
 	print("No. of Alz genes found in network: " + str(count) + " out of " + str(num_pos))
 
-	with open('saved_positive_class.pkl', 'wb') as f:
+	with open(output, 'wb') as f:
 		pickle.dump(positiveClass, f)
 		
 	return positiveClass, set_pos
 
 # 4: Create negative class by randomly selecting genes from the matrix
-def create_negative_class(set_pos, matrix):
+def create_negative_class(set_pos, matrix, dictf):
+	dict = dictf
+    
 	set_neg = set()
-	negativeClass = sps.lil_matrix((len(set_pos),dim))
+	negativeClass = sps.lil_matrix((len(set_pos),matrix.shape[0]))
 	
 	i = 0
 	while i < len(set_pos):
-		rand = randrange(dim - 1)
+		rand = randrange(matrix.shape[0] - 1)
 		if (str(rand) not in set_pos) and (str(rand) not in set_neg):
 			negativeClass[i] = matrix[rand]
 			set_neg.add(rand)
@@ -93,14 +96,14 @@ def create_negative_class(set_pos, matrix):
 	return negativeClass, set_neg
 
 # 5: Combine pos,neg classes to create full training data
-def create_full_training_class(positiveClass, negativeClass):
+def create_full_training_class(positiveClass, negativeClass, output):
 	positiveClass = sps.hstack([positiveClass,np.zeros((positiveClass.shape[0],1))])
 	negativeClass = sps.hstack([negativeClass,np.ones((negativeClass.shape[0],1))])
 	fullTrain = sps.vstack([positiveClass,negativeClass])
 	fullTrain = fullTrain.tocsr()
 	fullTrain = shuffle(fullTrain)
 	
-	with open('saved_full_train.pkl', 'wb') as f:
+	with open(output, 'wb') as f:
 		pickle.dump(fullTrain, f)
 		
 	return fullTrain
