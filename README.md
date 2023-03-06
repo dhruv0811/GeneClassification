@@ -1,2 +1,2 @@
 # GeneClassification
-![Pipeline Diagram](./results/FullPipeline.png?raw=true "Title")
+![Pipeline Diagram](./results/FullPipeline.png?raw=true)
