@@ -53,7 +53,7 @@ def create_sparse_matrix(dictf, restruc):
 	return matrix, dim
 
 # 3: Create positive class by searching for relevant genes in matrix
-def create_positive_class(posclass, matrix, dictf, output):
+def create_positive_class(posclass, matrix, dictf):
 	dict = dictf
 	#posclass should be something like 'alz_id_final.txt'
 	num_pos = sum(1 for line in open(posclass))
@@ -69,10 +69,10 @@ def create_positive_class(posclass, matrix, dictf, output):
 				set_pos.add(gene_id)
 	
 	positiveClass.resize(len(set_pos), positiveClass.shape[1])
-	print("No. of Alz genes found in network: " + str(count) + " out of " + str(num_pos))
+	print("No. of genes found in network: " + str(count) + " out of " + str(num_pos))
 
-	with open(output, 'wb') as f:
-		pickle.dump(positiveClass, f)
+# 	with open(output, 'wb') as f:
+# 		pickle.dump(positiveClass, f)
 		
 	return positiveClass, set_pos
 
@@ -132,11 +132,13 @@ def evaluate_model(model, X_full, y_full, X_test, y_test, scores):
 	print("\n5 fold cross validation score average:")
 	print(sum(cv_scores)/len(cv_scores))
 	scores[type(model).__name__] = sum(cv_scores)/len(cv_scores)
-
-	print("\nAUROC score:")
-	print(roc_auc_score(y_test, model.predict(X_test)))
-	metrics.plot_roc_curve(model, X_test, y_test) 
-	plt.show()
+	try:
+		print("\nAUROC score:")
+		print(roc_auc_score(y_test, model.predict(X_test)))
+		metrics.plot_roc_curve(model, X_test, y_test) 
+		plt.show()
+	except ValueError:
+		print("Warning: Model does not implement predict_proba().")
 	
 	count = 0
 	for num in range(0, len(y_test)):
